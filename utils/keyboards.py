@@ -13,6 +13,14 @@ session_btn = InlineKeyboardButton(
     callback_data='sessions'
 )
 
+broadcast_btn = InlineKeyboardButton(
+    text="Рассылка",
+    callback_data='broadcast'
+)
+
+start_kb.add(session_btn)
+start_kb.add(broadcast_btn)
+
 def build_keyboard(data: list[list[str | int]]) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
 
@@ -40,5 +48,3 @@ def get_user_kb(user_id) -> InlineKeyboardMarkup:
     ))
 
     return session_kb.as_markup()
-
-start_kb.add(session_btn)

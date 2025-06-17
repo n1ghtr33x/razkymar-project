@@ -2,13 +2,27 @@ from pyrogram import Client
 from typing import Dict
 
 from pyrogram.enums import ChatType
-from pyrogram.types import Chat
 
+from datetime import time, timezone, timedelta
 
 def split_by_chunks(text, chunk_size=4096):
+    """
+    принимает текст и возвращает список по элементам текст длина которого chunk_size
+    :param text: текст
+    :param chunk_size: длина текста
+    :return:
+    """
     return [text[i:i+chunk_size] for i in range(0, len(text), chunk_size)]
 
 def plural(n: int, one: str, few: str, many: str) -> str:
+    """
+    функция для возврата в какой множине должен быть текст
+    :param n:
+    :param one:
+    :param few:
+    :param many:
+    :return:
+    """
     if 11 <= (n % 100) <= 14:
         return many
     elif n % 10 == 1:
@@ -19,6 +33,11 @@ def plural(n: int, one: str, few: str, many: str) -> str:
         return many
 
 def format_seconds_to_text(seconds: float) -> str:
+    """
+    форматирование текста для времени
+    :param seconds:
+    :return:
+    """
     seconds = int(seconds)
     parts = []
 
@@ -48,8 +67,14 @@ async def get_average_response_time(client: Client, max_messages: int = 400, del
     response_times = []
     per_chat_averages: Dict[str, float] = {}
 
+    # часовой пояс GMT+2 (варшава)
+    gmt_plus_2 = timezone(timedelta(hours=2))
+
+    start_time = time(10, 0)  # 10:00
+    end_time = time(22, 0)    # 22:00
+
     async for dialog in client.get_dialogs():
-        chat: Chat = dialog.chat
+        chat = dialog.chat
         chat_name = chat.title or chat.first_name or str(chat.id)
 
         if chat.type != ChatType.PRIVATE:
@@ -68,14 +93,30 @@ async def get_average_response_time(client: Client, max_messages: int = 400, del
             if not msg.from_user or msg.from_user.is_bot:
                 continue
 
+            # переводим время сообщения в GMT+2
+            msg_time = msg.date.astimezone(gmt_plus_2)
+            msg_time_only = msg_time.time()
+
+            # фильтр по времени (сообщения только с 10:00 до 22:00)
+            if not (start_time <= msg_time_only <= end_time):
+                continue
+
             if msg.from_user.id != user_id:
                 last_other_msg = msg
             elif last_other_msg and last_other_msg.date:
+                # проверяем, что и последнее сообщение тоже в интервале 10:00-22:00
+                last_other_msg_time = last_other_msg.date.astimezone(gmt_plus_2).time()
+                if not (start_time <= last_other_msg_time <= end_time):
+                    last_other_msg = None
+                    continue
+
                 delta = msg.date - last_other_msg.date
                 delta_sec = delta.total_seconds()
+
                 if 0 < delta_sec < delta_limit:
                     response_times.append(delta_sec)
                     chat_response_times.append(delta_sec)
+
                 last_other_msg = None
 
         if chat_response_times:

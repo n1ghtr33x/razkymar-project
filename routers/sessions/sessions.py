@@ -40,6 +40,5 @@ async def average_time(call: types.CallbackQuery):
                 mess = await call.message.answer('Загрузка среднего время ответа...')
                 avg_text = await get_average_response_time(client)
                 await mess.edit_text(f'Среднее время ответа {avg_text}')
-            asyncio.create_task(start_pyrogram(f'{me.phone_number}', await client.export_session_string()))
         except Exception as e:
             await call.message.answer(f"❌ Ошибка сессии: {str(e)}\n\n")

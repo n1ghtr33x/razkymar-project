@@ -10,6 +10,7 @@ from utils.sessions.session_manager import session_manager
 
 async def on_startup():
     await session_manager.load_sessions()
+    await session_manager.load_second_sessions()
 
 async def on_shutdown():
     await session_manager.stop_all_sessions()
