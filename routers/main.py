@@ -154,7 +154,7 @@ async def process_code2(message: types.Message, state: FSMContext):
     data = await state.get_data()
     client = data["client2"]
     code = message.text
-    password = data['password']
+    password = data.get('password', None)
 
     try:
         await client.sign_in(
@@ -189,7 +189,7 @@ async def process_code2(message: types.Message, state: FSMContext):
                 await message.answer("✅ Сессия успешно загружена")
                 asyncio.create_task(start_pyrogram(f'ses_{me.phone_number}', await client.export_session_string()))
         except Exception as e:
-            await message.answer(f"Ошибка: {str(e)}")
+            await message.answer(f"❌ Ошибка: {str(e)}")
         await state.clear()
     except Exception as e:
         await message.answer(f"❌ Ошибка: {str(e)}")

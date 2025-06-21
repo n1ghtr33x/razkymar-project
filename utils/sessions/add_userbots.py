@@ -17,10 +17,6 @@ async def start_pyrogram(session_name, session_string):
             test_mode=test_mode
         )
 
-        @app.on_message()
-        async def handle_message(client, message):
-            print(f"[Pyrogram] Получено сообщение: {message.text}")
-
         try:
             await app.start()
             await idle()

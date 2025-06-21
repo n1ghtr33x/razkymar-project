@@ -1,11 +1,7 @@
-import asyncio
-
 from aiogram import Router, types, F
-from aiogram.types import FSInputFile
 from pyrogram.types import User
 
 from utils.keyboards import get_sessions_kb, get_user_kb
-from utils.sessions.add_userbots import start_pyrogram
 from utils.sessions.session_manager import session_manager
 from utils.scripts import get_average_response_time
 

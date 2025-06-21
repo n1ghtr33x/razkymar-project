@@ -16,7 +16,7 @@ async def on_shutdown():
     await session_manager.stop_all_sessions()
 
 async def main():
-    bot = Bot(token=bot_token)
+    bot = Bot(token='7971769690:AAE_8kcIwPF7sXJ2quEDyrRCPNWk8P4LMC0')
     dp = Dispatcher()
 
     logging.basicConfig(

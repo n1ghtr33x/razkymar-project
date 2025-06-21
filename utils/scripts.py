@@ -1,9 +1,16 @@
+import logging
+from io import BytesIO
+
+from aiogram.types import BufferedInputFile
 from pyrogram import Client
-from typing import Dict
+from typing import Dict, Any, Optional
 
-from pyrogram.enums import ChatType
+from pyrogram.enums import ChatType, ParseMode
 
-from datetime import time, timezone, timedelta
+from datetime import time, timezone, timedelta, datetime
+
+from pyrogram.raw.base import ReplyMarkup
+
 
 def split_by_chunks(text, chunk_size=4096):
     """
@@ -67,7 +74,6 @@ async def get_average_response_time(client: Client, max_messages: int = 400, del
     response_times = []
     per_chat_averages: Dict[str, float] = {}
 
-    # часовой пояс GMT+2 (варшава)
     gmt_plus_2 = timezone(timedelta(hours=2))
 
     start_time = time(10, 0)  # 10:00
@@ -93,18 +99,17 @@ async def get_average_response_time(client: Client, max_messages: int = 400, del
             if not msg.from_user or msg.from_user.is_bot:
                 continue
 
-            # переводим время сообщения в GMT+2
             msg_time = msg.date.astimezone(gmt_plus_2)
             msg_time_only = msg_time.time()
 
-            # фильтр по времени (сообщения только с 10:00 до 22:00)
+
             if not (start_time <= msg_time_only <= end_time):
                 continue
 
             if msg.from_user.id != user_id:
                 last_other_msg = msg
             elif last_other_msg and last_other_msg.date:
-                # проверяем, что и последнее сообщение тоже в интервале 10:00-22:00
+
                 last_other_msg_time = last_other_msg.date.astimezone(gmt_plus_2).time()
                 if not (start_time <= last_other_msg_time <= end_time):
                     last_other_msg = None
@@ -131,3 +136,152 @@ async def get_average_response_time(client: Client, max_messages: int = 400, del
 
     return average_text
 
+async def broadcast_one(client: Client, text: str, months: int, photo: Optional[BytesIO] = None) -> list[Any]:
+    successful = 0
+    fail = 0
+
+
+    gmt_plus_2 = timezone(timedelta(hours=2))
+
+    async for dialog in client.get_dialogs():
+        chat = dialog.chat
+
+        if chat.type != ChatType.PRIVATE:
+            continue
+
+        messages = []
+        async for msg in client.get_chat_history(chat.id, limit=100):
+            messages.append(msg)
+
+        diff_months = 0
+
+        for msg in messages:
+            if not msg.from_user or msg.from_user.is_bot:
+                continue
+
+            msg_time = msg.date.astimezone(gmt_plus_2)
+
+            now = datetime.now(gmt_plus_2)
+
+            msg_total_months = msg_time.year * 12 + msg_time.month
+            now_total_months = now.year * 12 + now.month
+
+            diff_months = now_total_months - msg_total_months
+
+            break
+
+        if months == 0:
+            try:
+                if photo:
+                    await client.send_photo(
+                        chat_id=chat.id,
+                        photo=photo,
+                        caption=text,
+                        parse_mode=ParseMode.MARKDOWN
+                    )
+                else:
+                    await client.send_message(
+                        chat_id=chat.id,
+                        text=text,
+                        parse_mode=ParseMode.MARKDOWN
+                    )
+                successful += 1
+            except Exception as e:
+                fail += 1
+                logging.info(f"❌ Ошибка при отправке в {chat.id}: {e}")
+        elif diff_months >= months:
+            try:
+                if photo:
+                    await client.send_photo(
+                        chat_id=chat.id,
+                        photo=photo,
+                        caption=text,
+                        parse_mode=ParseMode.MARKDOWN
+                    )
+                else:
+                    await client.send_message(
+                        chat_id=chat.id,
+                        text=text,
+                        parse_mode=ParseMode.MARKDOWN
+                    )
+                successful += 1
+            except Exception as e:
+                fail += 1
+                logging.info(f"❌ Ошибка при отправке в {chat.id}: {e}")
+
+    return [successful, fail]
+
+async def broadcast_multiply(clients: list[Client], text: str, months: int, photo: Optional[BytesIO] = None) -> list[Any]:
+    successful = 0
+    fail = 0
+
+
+    gmt_plus_2 = timezone(timedelta(hours=2))
+    for client in clients:
+        async for dialog in client.get_dialogs():
+            chat = dialog.chat
+
+            if chat.type != ChatType.PRIVATE:
+                continue
+
+            messages = []
+            async for msg in client.get_chat_history(chat.id, limit=100):
+                messages.append(msg)
+
+            diff_months = 0
+
+            for msg in messages:
+                if not msg.from_user or msg.from_user.is_bot:
+                    continue
+
+                msg_time = msg.date.astimezone(gmt_plus_2)
+
+                now = datetime.now(gmt_plus_2)
+
+                msg_total_months = msg_time.year * 12 + msg_time.month
+                now_total_months = now.year * 12 + now.month
+
+                diff_months = now_total_months - msg_total_months
+
+                break
+
+            if months == 0:
+                try:
+                    if photo:
+                        await client.send_photo(
+                            chat_id=chat.id,
+                            photo=photo,
+                            caption=text,
+                            parse_mode=ParseMode.MARKDOWN
+                        )
+                    else:
+                        await client.send_message(
+                            chat_id=chat.id,
+                            text=text,
+                            parse_mode=ParseMode.MARKDOWN
+                        )
+                    successful += 1
+                except Exception as e:
+                    fail += 1
+                    logging.info(f"❌ Ошибка при отправке в {chat.id}: {e}")
+            elif diff_months >= months:
+                try:
+                    if photo:
+                        await client.send_photo(
+                            chat_id=chat.id,
+                            photo=photo,
+                            caption=text,
+                            parse_mode=ParseMode.MARKDOWN
+                        )
+                    else:
+                        await client.send_message(
+                            chat_id=chat.id,
+                            text=text,
+                            parse_mode=ParseMode.MARKDOWN
+                        )
+                    successful += 1
+                except Exception as e:
+                    fail += 1
+                    logging.info(f"❌ Ошибка при отправке в {chat.id}: {e}")
+
+    return [successful, fail]
