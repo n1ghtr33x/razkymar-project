@@ -4,19 +4,26 @@ import logging
 from aiogram import Bot, Dispatcher
 from routers.register_routers import register_routers
 
-from config import bot_token
 from utils.sessions.session_manager import session_manager
+
+from config import bot_token
 
 
 async def on_startup():
     await session_manager.load_sessions()
     await session_manager.load_second_sessions()
+    logging.info('Aiogram started!')
+    logging.info('Pyrogram started!')
+
 
 async def on_shutdown():
     await session_manager.stop_all_sessions()
+    logging.info('Aiogram closed!')
+    logging.info('Pyrogram closed!')
+
 
 async def main():
-    bot = Bot(token='7971769690:AAE_8kcIwPF7sXJ2quEDyrRCPNWk8P4LMC0')
+    bot = Bot(token=bot_token)
     dp = Dispatcher()
 
     logging.basicConfig(

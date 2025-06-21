@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 
 from aiogram.fsm.context import FSMContext
@@ -5,7 +7,7 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from pyrogram.types import User
 
-from utils.sessions.session_manager import session_manager
+from .sessions.session_manager import session_manager
 
 start_kb = InlineKeyboardBuilder()
 
@@ -21,6 +23,7 @@ broadcast_btn = InlineKeyboardButton(
 
 start_kb.add(session_btn)
 start_kb.add(broadcast_btn)
+
 
 def broadcast_kb() -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
@@ -48,6 +51,7 @@ def broadcast_kb() -> InlineKeyboardMarkup:
     kb.row(kb_5)
     kb.row(kb_3, kb_4)
     return kb.as_markup()
+
 
 def broadcast_time_kb() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
@@ -79,6 +83,7 @@ def broadcast_time_kb() -> InlineKeyboardMarkup:
 
     return builder.as_markup()
 
+
 async def active_users_kb() -> InlineKeyboardMarkup:
     sessions = []
     for user_id, client in session_manager.active_sessions.items():
@@ -88,6 +93,7 @@ async def active_users_kb() -> InlineKeyboardMarkup:
         except Exception as e:
             logging.info(f"Ошибка: {e}")
     return active_users_build(sessions, 'broadcast_user')
+
 
 async def active_users_multiple(state: FSMContext) -> InlineKeyboardMarkup:
     data = await state.get_data()
@@ -101,6 +107,7 @@ async def active_users_multiple(state: FSMContext) -> InlineKeyboardMarkup:
         except Exception as e:
             logging.info(f'Ошибка: {e}')
     return active_users__multiple_build(sessions, 'broadcast-user-multiple')
+
 
 def active_users__multiple_build(data: list[list[str | int]], callback: str) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
@@ -118,10 +125,10 @@ def active_users__multiple_build(data: list[list[str | int]], callback: str) -> 
         callback_data='broadcast_back'
     )
 
-
     builder.adjust(3)
     builder.row(go, back)
     return builder.as_markup()
+
 
 def active_users_build(data: list[list[str | int]], callback: str) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
@@ -153,6 +160,7 @@ async def get_sessions_kb() -> InlineKeyboardMarkup:
             logging.info(f"Ошибка: {e}")
     return build_keyboard(sessions)
 
+
 def get_user_kb(user_id) -> InlineKeyboardMarkup:
     session_kb = InlineKeyboardBuilder()
     session_kb.add(InlineKeyboardButton(
@@ -161,6 +169,7 @@ def get_user_kb(user_id) -> InlineKeyboardMarkup:
     ))
 
     return session_kb.as_markup()
+
 
 broadcast_mk = InlineKeyboardBuilder()
 broadcast_all_btn = InlineKeyboardButton(

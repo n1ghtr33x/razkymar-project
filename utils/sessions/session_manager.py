@@ -42,7 +42,6 @@ class SessionManager:
 
     async def load_second_sessions(self):
         """Загружаем все сессии из файла при старте"""
-        print(1)
         if not self.sessions_second_file.exists():
             return
 

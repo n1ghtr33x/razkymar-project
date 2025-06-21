@@ -19,7 +19,8 @@ def split_by_chunks(text, chunk_size=4096):
     :param chunk_size: длина текста
     :return:
     """
-    return [text[i:i+chunk_size] for i in range(0, len(text), chunk_size)]
+    return [text[i:i + chunk_size] for i in range(0, len(text), chunk_size)]
+
 
 def plural(n: int, one: str, few: str, many: str) -> str:
     """
@@ -38,6 +39,7 @@ def plural(n: int, one: str, few: str, many: str) -> str:
         return few
     else:
         return many
+
 
 def format_seconds_to_text(seconds: float) -> str:
     """
@@ -68,6 +70,7 @@ def format_seconds_to_text(seconds: float) -> str:
 
     return " ".join(parts)
 
+
 async def get_average_response_time(client: Client, max_messages: int = 400, delta_limit: int = 84600) -> str:
     me = await client.get_me()
     user_id = me.id
@@ -77,7 +80,7 @@ async def get_average_response_time(client: Client, max_messages: int = 400, del
     gmt_plus_2 = timezone(timedelta(hours=2))
 
     start_time = time(10, 0)  # 10:00
-    end_time = time(22, 0)    # 22:00
+    end_time = time(22, 0)  # 22:00
 
     async for dialog in client.get_dialogs():
         chat = dialog.chat
@@ -101,7 +104,6 @@ async def get_average_response_time(client: Client, max_messages: int = 400, del
 
             msg_time = msg.date.astimezone(gmt_plus_2)
             msg_time_only = msg_time.time()
-
 
             if not (start_time <= msg_time_only <= end_time):
                 continue
@@ -136,10 +138,10 @@ async def get_average_response_time(client: Client, max_messages: int = 400, del
 
     return average_text
 
+
 async def broadcast_one(client: Client, text: str, months: int, photo: Optional[BytesIO] = None) -> list[Any]:
     successful = 0
     fail = 0
-
 
     gmt_plus_2 = timezone(timedelta(hours=2))
 
@@ -211,10 +213,11 @@ async def broadcast_one(client: Client, text: str, months: int, photo: Optional[
 
     return [successful, fail]
 
-async def broadcast_multiply(clients: list[Client], text: str, months: int, photo: Optional[BytesIO] = None) -> list[Any]:
+
+async def broadcast_multiply(clients: list[Client], text: str, months: int, photo: Optional[BytesIO] = None) -> list[
+    Any]:
     successful = 0
     fail = 0
-
 
     gmt_plus_2 = timezone(timedelta(hours=2))
     for client in clients:

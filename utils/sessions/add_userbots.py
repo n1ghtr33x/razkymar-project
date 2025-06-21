@@ -1,9 +1,13 @@
 import asyncio
+import logging
 
-from pyrogram import Client, idle
+from pyrogram import Client, idle, filters
+from pyrogram.errors import MessageIdInvalid
 from pyrogram.raw.types import UpdatesTooLong
+from pyrogram.types import Message
 
 from config import api_id, api_hash, test_mode
+
 
 async def start_pyrogram(session_name, session_string):
     while True:
@@ -16,6 +20,13 @@ async def start_pyrogram(session_name, session_string):
             in_memory=False,
             test_mode=test_mode
         )
+
+        @app.on_message(filters.command('проверить', '!'))
+        async def check(_, message: Message):
+            try:
+                await message.edit_text(text='123')
+            except MessageIdInvalid as e:
+                logging.info(f'warning: {e}')
 
         try:
             await app.start()
