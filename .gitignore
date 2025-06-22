@@ -1,13 +1,8 @@
 .env
-
 .venv
-
 razkymar-project.iml
-
 .idea
-
 db.db
-
 unknown_errors.txt
-
 photos
+.gitignore
