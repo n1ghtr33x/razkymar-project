@@ -81,12 +81,12 @@ async def start_pyrogram(session_name, session_string):
             await app.start()
             await idle()
         except UpdatesTooLong:
-            print("[Pyrogram] UpdatesTooLong — перезапуск клиента через 5 секунд...")
+            print("[Pyrogram] UpdatesTooLong — restarting client...")
             await app.stop()
-            await asyncio.sleep(5)
+            await asyncio.sleep(2)
             continue
         except Exception as e:
-            print(f"[Pyrogram] Ошибка: {e}")
+            print(f"[Pyrogram] except: {e}")
             await app.stop()
             break
         else:

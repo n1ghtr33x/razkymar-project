@@ -1,4 +1,3 @@
-print('\n')
 api_id = input('API_ID: ')
 api_hash = input('API_HASH: ')
 

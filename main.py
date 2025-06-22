@@ -36,7 +36,7 @@ async def main():
     dp.shutdown.register(on_shutdown)
 
     try:
-        await bot.delete_webhook(drop_pending_updates=True)
+        await bot.delete_webhook(drop_pending_updates=False)
         await dp.start_polling(bot)
     except Exception as e:
         logging.error(f"Bot crashed: {e}")
@@ -48,4 +48,4 @@ if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        print("Остановка...")
+        logging.info("Stopping...")
