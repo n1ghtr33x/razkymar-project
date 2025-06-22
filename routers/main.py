@@ -18,11 +18,13 @@ router = Router()
 SESSION_DIR = Path("sessions")
 SESSION_DIR.mkdir(exist_ok=True)
 
+
 class AuthStates(StatesGroup):
     waiting_for_phone = State()
     waiting_for_code = State()
     waiting_for_password = State()
     waiting_for_code2 = State()
+
 
 @router.message(Command('start'))
 async def add_client(message: types.Message):
@@ -35,10 +37,12 @@ async def add_client(message: types.Message):
 
     await message.answer(f'Добро пожаловать {message.from_user.full_name}.', reply_markup=start_kb.as_markup())
 
+
 @router.message(Command("add"))
 async def cmd_add(message: types.Message, state: FSMContext):
     await message.answer("Введите номер телефона (например, +48668412234):")
     await state.set_state(AuthStates.waiting_for_phone)
+
 
 async def create_client(session_path: Path) -> Client:
     client = Client(
@@ -50,6 +54,7 @@ async def create_client(session_path: Path) -> Client:
     )
 
     return client
+
 
 @router.message(AuthStates.waiting_for_phone, F.text.regexp(r'^\+[0-9]{11,15}$'))
 async def process_phone(message: types.Message, state: FSMContext):
@@ -80,6 +85,7 @@ async def process_phone(message: types.Message, state: FSMContext):
     except Exception as e:
         await message.answer(f"Ошибка: {str(e)}")
         await state.clear()
+
 
 @router.message(AuthStates.waiting_for_code, F.text.regexp(r'^\d+$'))
 async def process_code(message: types.Message, state: FSMContext):
@@ -120,6 +126,7 @@ async def process_code(message: types.Message, state: FSMContext):
         await message.answer(f"❌ Ошибка: {str(e)}")
         await state.clear()
 
+
 @router.message(AuthStates.waiting_for_password)
 async def process_password(message: types.Message, state: FSMContext):
     data = await state.get_data()
@@ -148,6 +155,7 @@ async def process_password(message: types.Message, state: FSMContext):
 
     except Exception as e:
         await message.answer(f"❌ Ошибка: {str(e)}")
+
 
 @router.message(AuthStates.waiting_for_code2)
 async def process_code2(message: types.Message, state: FSMContext):

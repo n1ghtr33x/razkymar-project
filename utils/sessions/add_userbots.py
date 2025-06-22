@@ -1,13 +1,11 @@
 import asyncio
-import base64
 import logging
-from io import BytesIO
 
-from pyrogram import Client, idle, filters
+from pyrogram import Client, idle
 from pyrogram.enums import ParseMode
 from pyrogram.errors import MessageIdInvalid
 from pyrogram.raw.types import UpdatesTooLong
-from pyrogram.types import Message, User
+from pyrogram.types import Message
 
 from config import api_id, api_hash, test_mode
 from utils.db import db
