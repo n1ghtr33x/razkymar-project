@@ -1,15 +1,12 @@
 import logging
 from io import BytesIO
 
-from aiogram.types import BufferedInputFile
 from pyrogram import Client
 from typing import Dict, Any, Optional
 
 from pyrogram.enums import ChatType, ParseMode
 
 from datetime import time, timezone, timedelta, datetime
-
-from pyrogram.raw.base import ReplyMarkup
 
 
 def split_by_chunks(text, chunk_size=4096):

@@ -21,8 +21,14 @@ broadcast_btn = InlineKeyboardButton(
     callback_data='broadcast'
 )
 
+autoresponder_btn = InlineKeyboardButton(
+    text='Автоответчик',
+    callback_data='autoresponder'
+)
+
 start_kb.add(session_btn)
 start_kb.add(broadcast_btn)
+start_kb.row(autoresponder_btn)
 
 
 def broadcast_kb() -> InlineKeyboardMarkup:
