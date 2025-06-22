@@ -1,8 +1,10 @@
 import asyncio
-import json
+import base64
 import logging
+from io import BytesIO
 
 from pyrogram import Client, idle, filters
+from pyrogram.enums import ParseMode
 from pyrogram.errors import MessageIdInvalid
 from pyrogram.raw.types import UpdatesTooLong
 from pyrogram.types import Message, User
@@ -65,7 +67,17 @@ async def start_pyrogram(session_name, session_string):
                     except MessageIdInvalid as ex:
                         logging.info(f'warning: {ex}')
             else:
-                print(message.text)
+                status = db.get('core.autoresponder', 'status', False)
+                if status:
+                    users = db.get('core.autoresponder', 'users', [])
+                    if me.id in users['users']:
+                        data = db.get('core.autoresponder', 'data', {'text': 'wd', 'photo': None})
+                        text = data['text']
+                        photo = data['photo']
+                        if photo is not None:
+                            await app.send_photo(chat_id=message.chat.id, photo=photo, caption=text)
+                        else:
+                            await app.send_message(chat_id=message.chat.id, text=text, parse_mode=ParseMode.MARKDOWN)
 
         try:
             await app.start()

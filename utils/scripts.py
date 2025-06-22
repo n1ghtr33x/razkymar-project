@@ -211,8 +211,7 @@ async def broadcast_one(client: Client, text: str, months: int, photo: Optional[
     return [successful, fail]
 
 
-async def broadcast_multiply(clients: list[Client], text: str, months: int, photo: Optional[BytesIO] = None) -> list[
-    Any]:
+async def broadcast_multiply(clients: list[Client], text: str, months: int, photo: Optional[BytesIO] = None) -> list[Any]:
     successful = 0
     fail = 0
 

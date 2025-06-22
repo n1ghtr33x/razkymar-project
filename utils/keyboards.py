@@ -31,6 +31,31 @@ start_kb.add(broadcast_btn)
 start_kb.row(autoresponder_btn)
 
 
+def autoresponder_kb() -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    kb_1 = InlineKeyboardButton(
+        text='📄 Изменить текст',
+        callback_data='autoresponder_add_text'
+    )
+    kb_2 = InlineKeyboardButton(
+        text='📷 Изменить фото',
+        callback_data='autoresponder_add_photo'
+    )
+    kb_3 = InlineKeyboardButton(
+        text='✅ Запустить',
+        callback_data='autoresponder_run'
+    )
+    kb_4 = InlineKeyboardButton(
+        text='❌ Отмена',
+        callback_data='autoresponder_back'
+    )
+
+    builder.row(kb_1, kb_2)
+    builder.row(kb_3, kb_4)
+
+    return builder.as_markup()
+
+
 def broadcast_kb() -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
     kb_1 = InlineKeyboardButton(
@@ -101,6 +126,20 @@ async def active_users_kb() -> InlineKeyboardMarkup:
     return active_users_build(sessions, 'broadcast_user')
 
 
+async def autoresponder_users(state: FSMContext) -> InlineKeyboardMarkup:
+    data = await state.get_data()
+    sessions = []
+    for user_id, client in session_manager.active_sessions.items():
+        try:
+            me: User = await client.get_me()
+            current = data.get(f'btn_{me.id}', False)
+            prefix = '✅' if current else '❌'
+            sessions.append([f'{prefix} {me.first_name}', f'btn_{me.id}'])
+        except Exception as e:
+            logging.info(f'Ошибка: {e}')
+    return autoresponder_users_build(sessions, 'autoresponder-user')
+
+
 async def active_users_multiple(state: FSMContext) -> InlineKeyboardMarkup:
     data = await state.get_data()
     sessions = []
@@ -113,6 +152,27 @@ async def active_users_multiple(state: FSMContext) -> InlineKeyboardMarkup:
         except Exception as e:
             logging.info(f'Ошибка: {e}')
     return active_users__multiple_build(sessions, 'broadcast-user-multiple')
+
+
+def autoresponder_users_build(data: list[list[str | int]], callback: str) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+
+    for text, user_id in data:
+        builder.button(text=text, callback_data=f'{callback}_{user_id}')
+
+    go = InlineKeyboardButton(
+        text='✅ Начать',
+        callback_data='autoresponder_run'
+    )
+
+    back = InlineKeyboardButton(
+        text='❌ Отмена',
+        callback_data='autoresponder_back'
+    )
+
+    builder.adjust(3)
+    builder.row(go, back)
+    return builder.as_markup()
 
 
 def active_users__multiple_build(data: list[list[str | int]], callback: str) -> InlineKeyboardMarkup:
@@ -198,3 +258,23 @@ broadcast_mk.row(broadcast_all_btn)
 broadcast_mk.row(broadcast_multiple_btn)
 broadcast_mk.row(broadcast_one_btn)
 broadcast_mk.row(broadcast_cancel_btn)
+
+
+def on_off_kb() -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+
+    on = InlineKeyboardButton(
+        text='Включить',
+        callback_data='autoresponder_on'
+    )
+
+    off = InlineKeyboardButton(
+        text='Выключить',
+        callback_data='autoresponder_off'
+    )
+
+    builder.add(on)
+    builder.add(off)
+    builder.adjust(1)
+
+    return builder.as_markup()

@@ -83,9 +83,6 @@ async def start_editing(call: types.CallbackQuery, state: FSMContext):
     # Получаем ID выбранных пользователей
     selected_ids = [int(k.split('_')[1]) for k, v in data.items() if k.startswith('btn_') and v is True]
 
-    print(selected_ids)
-    print(data)
-
     if not selected_ids:
         await call.answer("❌ Никто не выбран")
         return
