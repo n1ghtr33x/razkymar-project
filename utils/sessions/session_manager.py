@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 from typing import Dict
 from pyrogram import Client
+from pyrogram.enums import ParseMode
 
 from config import test_mode
 from utils.sessions.add_userbots import start_pyrogram
@@ -32,7 +33,8 @@ class SessionManager:
                     api_hash=session_data["api_hash"],
                     session_string=session_data["session_string"],
                     in_memory=True,
-                    test_mode=test_mode
+                    test_mode=test_mode,
+                    parse_mode=ParseMode.MARKDOWN
                 )
                 await client.start()
                 self.active_sessions[phone] = client

@@ -5,3 +5,8 @@
 razkymar-project.iml
 
 .idea
+/routers/__pycache__
+/__pycache__
+/utils/__pycache__
+/utils/sessions/__pycache__
+unknown_errors.txt
