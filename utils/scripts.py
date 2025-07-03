@@ -1,5 +1,6 @@
 import logging
 from io import BytesIO
+import re
 
 from pyrogram import Client
 from typing import Dict, Any, Optional
@@ -176,18 +177,19 @@ async def broadcast_one(client: Client, text: str, months: int, photo: Optional[
                         chat_id=chat.id,
                         photo=photo,
                         caption=text,
-                        parse_mode=ParseMode.MARKDOWN
+                        parse_mode=ParseMode.HTML
                     )
                 else:
                     await client.send_message(
                         chat_id=chat.id,
                         text=text,
-                        parse_mode=ParseMode.MARKDOWN
+                        parse_mode=ParseMode.HTML
                     )
                 successful += 1
             except Exception as e:
                 fail += 1
                 logging.info(f"❌ Ошибка при отправке в {chat.id}: {e}")
+                pass
         elif diff_months >= months:
             try:
                 if photo:
@@ -195,13 +197,13 @@ async def broadcast_one(client: Client, text: str, months: int, photo: Optional[
                         chat_id=chat.id,
                         photo=photo,
                         caption=text,
-                        parse_mode=ParseMode.MARKDOWN
+                        parse_mode=ParseMode.HTML
                     )
                 else:
                     await client.send_message(
                         chat_id=chat.id,
                         text=text,
-                        parse_mode=ParseMode.MARKDOWN
+                        parse_mode=ParseMode.HTML
                     )
                 successful += 1
             except Exception as e:
@@ -251,13 +253,13 @@ async def broadcast_multiply(clients: list[Client], text: str, months: int, phot
                             chat_id=chat.id,
                             photo=photo,
                             caption=text,
-                            parse_mode=ParseMode.MARKDOWN
+                            parse_mode=ParseMode.HTML
                         )
                     else:
                         await client.send_message(
                             chat_id=chat.id,
                             text=text,
-                            parse_mode=ParseMode.MARKDOWN
+                            parse_mode=ParseMode.HTML
                         )
                     successful += 1
                 except Exception as e:
@@ -270,13 +272,13 @@ async def broadcast_multiply(clients: list[Client], text: str, months: int, phot
                             chat_id=chat.id,
                             photo=photo,
                             caption=text,
-                            parse_mode=ParseMode.MARKDOWN
+                            parse_mode=ParseMode.HTML
                         )
                     else:
                         await client.send_message(
                             chat_id=chat.id,
                             text=text,
-                            parse_mode=ParseMode.MARKDOWN
+                            parse_mode=ParseMode.HTML
                         )
                     successful += 1
                 except Exception as e:

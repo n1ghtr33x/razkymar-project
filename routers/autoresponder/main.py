@@ -1,4 +1,3 @@
-import base64
 import os
 from io import BytesIO
 
@@ -12,7 +11,6 @@ from aiogram.utils.text_decorations import markdown_decoration
 from utils.keyboards import on_off_kb, start_kb, autoresponder_kb, autoresponder_users
 
 from utils.db import db
-from utils.sessions.session_manager import session_manager
 
 router = Router()
 
@@ -29,11 +27,14 @@ class AutoresponderStates(StatesGroup):
 async def autoresponder(call: types.CallbackQuery, state: FSMContext):
     await call.message.delete()
     status = db.get('core.autoresponder', 'status', False)
-    status_text = 'Выключен'
+    status_text = '🚫 Выключено'
     if status:
-        status_text = 'Включен'
+        status_text = '✅ Включено'
 
-    await call.message.answer(f'Автоответчик {status_text}', reply_markup=on_off_kb())
+    await call.message.answer(f'✅ Авто-Ответчик — Функция по авто-ответу всем чатам, в включённом состоянии'
+                              f'\n'
+                              f'\n ⚡️ Статус: {status_text}'
+                              , reply_markup=on_off_kb())
     await state.set_state(AutoresponderStates.on_off)
 
 
@@ -47,16 +48,9 @@ async def on_off(call: types.CallbackQuery, state: FSMContext):
         return
 
     db.set('core.autoresponder', 'status', False)
-    await call.message.answer('Выключено')
-    if not session_manager.active_sessions:
-        await call.message.answer(
-            f"🔑 Привет {call.message.from_user.full_name}\n"
-            "Используйте /add для добавления новой сессии"
-        )
-        return
+    await call.message.answer('🚫 Авто-Ответчик был успешно выключён!')
 
-    await call.message.answer(f'Добро пожаловать {call.from_user.full_name}.',
-                              reply_markup=start_kb.as_markup())
+    await call.message.answer(f'🔥 Добро пожаловать в «Юзер Контроль Бота»\n\nВыберите одну из кнопок ниже', reply_markup=start_kb.as_markup())
 
     await state.clear()
 
@@ -65,15 +59,7 @@ async def on_off(call: types.CallbackQuery, state: FSMContext):
 async def cancel(call: types.CallbackQuery, state: FSMContext):
     await call.message.delete()
 
-    if not session_manager.active_sessions:
-        await call.message.answer(
-            f"🔑 Привет {call.message.from_user.full_name}\n"
-            "Используйте /add для добавления новой сессии"
-        )
-        return
-
-    await call.message.answer(f'Добро пожаловать {call.from_user.full_name}.',
-                              reply_markup=start_kb.as_markup())
+    await call.message.answer(f'🔥 Добро пожаловать в «Юзер Контроль Бота»\n\nВыберите одну из кнопок ниже', reply_markup=start_kb.as_markup())
 
     await state.clear()
 
@@ -156,7 +142,7 @@ async def check_photo(message: types.Message, state: FSMContext, bot: Bot):
 @router.callback_query(F.data == 'autoresponder_run', AutoresponderStates.autoresponder_preview)
 async def go(call: types.CallbackQuery, state: FSMContext):
     await call.message.delete()
-    await call.message.answer('Выбери аккаунты:', reply_markup=await autoresponder_users(state))
+    await call.message.answer('🦾 Выберите аккаунты. На них будет включен авто-ответчик', reply_markup=await autoresponder_users(state))
     await state.set_state(AutoresponderStates.select_users_state)
 
 
@@ -206,5 +192,5 @@ async def run(call: types.CallbackQuery, state: FSMContext):
     db.set('core.autoresponder', 'data', value)
 
     await call.message.delete()
-    await call.message.answer('Включено')
+    await call.message.answer('✅ Авто-Ответчик был успешно включён!')
     await state.clear()
