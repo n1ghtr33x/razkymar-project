@@ -12,23 +12,36 @@ from .sessions.session_manager import session_manager
 start_kb = InlineKeyboardBuilder()
 
 session_btn = InlineKeyboardButton(
-    text="Сессии",
+    text="🔗 Сессии",
     callback_data='sessions'
 )
 
 broadcast_btn = InlineKeyboardButton(
-    text="Рассылка",
+    text="💬 Рассылка",
     callback_data='broadcast'
 )
 
+stats_btn = InlineKeyboardButton(
+    text='📊 Статистика',
+    callback_data='stats'
+)
+
+
 autoresponder_btn = InlineKeyboardButton(
-    text='Автоответчик',
+    text='✅ Авто-Ответчик',
     callback_data='autoresponder'
 )
 
 start_kb.add(session_btn)
+start_kb.add(stats_btn)
 start_kb.add(broadcast_btn)
-start_kb.row(autoresponder_btn)
+start_kb.add(autoresponder_btn)
+
+start_kb.adjust(1)
+
+main_menu_broadcast = InlineKeyboardBuilder()
+main_menu_broadcast_btn = InlineKeyboardButton(text='↩️ Главное меню', callback_data='broadcast_back')
+main_menu_broadcast.add(main_menu_broadcast_btn)
 
 
 def autoresponder_kb() -> InlineKeyboardMarkup:
@@ -88,22 +101,22 @@ def broadcast_time_kb() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
 
     btn_1 = InlineKeyboardButton(
-        text='Всем',
+        text='🫂 Всем',
         callback_data='broadcast_time_all'
     )
 
     btn_2 = InlineKeyboardButton(
-        text='1 месяц',
+        text='🔥 Последний Месяц',
         callback_data='broadcast_time_1'
     )
 
     btn_3 = InlineKeyboardButton(
-        text='3 месяца',
+        text='⚡️  Последние 3 месяца',
         callback_data='broadcast_time_3'
     )
 
     btn_4 = InlineKeyboardButton(
-        text='6 месяца',
+        text='🌙 Последние 6 месяцев',
         callback_data='broadcast_time_6'
     )
 
@@ -213,6 +226,21 @@ def build_keyboard(data: list[list[str | int]]) -> InlineKeyboardMarkup:
         builder.button(text=text, callback_data=f'session_{callback}')
 
     builder.adjust(3)  # по 3 кнопки в ряд
+    btn1 = InlineKeyboardButton(text='➕ Добавить', callback_data='add_session')
+    btn2 = InlineKeyboardButton(text='➖ Удалить', callback_data='remove_session')
+    builder.row(btn1, btn2)
+    btn3 = InlineKeyboardButton(text='↩️ Вернуться', callback_data='back')
+    builder.row(btn3)
+    return builder.as_markup()
+
+
+def build_phone_kb(data: list[list[str | int]]) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+
+    for text, callback in data:
+        builder.button(text=text, callback_data=f'phone_{callback}')
+
+    builder.adjust(2)
     return builder.as_markup()
 
 
@@ -227,31 +255,32 @@ async def get_sessions_kb() -> InlineKeyboardMarkup:
     return build_keyboard(sessions)
 
 
-def get_user_kb(user_id) -> InlineKeyboardMarkup:
-    session_kb = InlineKeyboardBuilder()
-    session_kb.add(InlineKeyboardButton(
-        text="⏳ Среднее время ответа",
-        callback_data=f'user_{user_id}'
-    ))
-
-    return session_kb.as_markup()
+async def get_sessions_numbers() -> InlineKeyboardMarkup:
+    sessions = []
+    for user_id, client in session_manager.active_sessions.items():
+        try:
+            me: User = await client.get_me()
+            sessions.append([me.first_name, me.phone_number])
+        except Exception as e:
+            logging.info(f'Ошибка: {e}')
+    return build_phone_kb(sessions)
 
 
 broadcast_mk = InlineKeyboardBuilder()
 broadcast_all_btn = InlineKeyboardButton(
-    text='Все аккаунты',
+    text='🫂 Все',
     callback_data='broadcast_all'
 )
 broadcast_multiple_btn = InlineKeyboardButton(
-    text='Несколько аккаунтов',
+    text='👥 Несколько',
     callback_data='broadcast_multiple'
 )
 broadcast_one_btn = InlineKeyboardButton(
-    text='Один аккаунт',
+    text='👤 Один',
     callback_data='broadcast_one'
 )
 broadcast_cancel_btn = InlineKeyboardButton(
-    text='❌ Назад',
+    text='↩️ Главное меню',
     callback_data='broadcast_back'
 )
 broadcast_mk.row(broadcast_all_btn)
@@ -264,12 +293,12 @@ def on_off_kb() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
 
     on = InlineKeyboardButton(
-        text='Включить',
+        text='✅ Включить',
         callback_data='autoresponder_on'
     )
 
     off = InlineKeyboardButton(
-        text='Выключить',
+        text='🚫 Выключить',
         callback_data='autoresponder_off'
     )
 

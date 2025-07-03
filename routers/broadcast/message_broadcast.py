@@ -1,18 +1,17 @@
 import logging
 
 from aiogram import Router, types, F, Bot
-from aiogram.enums import ParseMode
 from aiogram.filters import StateFilter
 from aiogram.types import BufferedInputFile
 from pyrogram.types import User
 
 from utils.keyboards import broadcast_mk, start_kb, broadcast_kb, active_users_kb, broadcast_time_kb, \
-    active_users_multiple
+    active_users_multiple, main_menu_broadcast
 from utils.scripts import broadcast_one, broadcast_multiply
 from utils.sessions.session_manager import session_manager
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
-from aiogram.utils.markdown import markdown_decoration
+from aiogram.utils.markdown import html_decoration
 from io import BytesIO
 
 router = Router()
@@ -32,23 +31,36 @@ class StatesState(StatesGroup):
 
 @router.callback_query(F.data == 'broadcast')
 async def broadcast(call: types.CallbackQuery):
-    await call.message.edit_text('Тип рассылки:', reply_markup=broadcast_mk.as_markup())
+    await call.message.edit_text('🦾 <b>Сколько аккаунтов хотите использовать?</b> Выберите категорию количества '
+                                 'аккаунтов', reply_markup=broadcast_mk.as_markup())
 
 
 @router.callback_query(F.data == 'broadcast_back')
 async def back(call: types.CallbackQuery, state: FSMContext):
     if call.message.photo:
         await call.message.delete()
-        await call.message.answer(f'Добро пожаловать {call.from_user.full_name}', reply_markup=start_kb.as_markup())
+        await call.message.answer(f'🔥 Добро пожаловать в «Юзер Контроль Бота»\n\nВыберите одну из кнопок ниже', reply_markup=start_kb.as_markup())
         await state.clear()
     else:
-        await call.message.edit_text(f'Добро пожаловать {call.from_user.full_name}', reply_markup=start_kb.as_markup())
+        await call.message.edit_text(f'🔥 Добро пожаловать в «Юзер Контроль Бота»\n\nВыберите одну из кнопок ниже', reply_markup=start_kb.as_markup())
         await state.clear()
 
 
 @router.callback_query(F.data == 'broadcast_multiple')
 async def broadcast_multiple(call: types.CallbackQuery, state: FSMContext):
-    await call.message.edit_text('Выбери аккаунты:', reply_markup=await active_users_multiple(state))
+    for user_id, client in session_manager.active_sessions.items():
+        try:
+            me: User = await client.get_me()
+            users.append(me.id)
+        except Exception as e:
+            logging.warning(f"Ошибка при получении {user_id}: {e}")
+
+    if not users:
+        await call.message.edit_text("❌ Не удалось загрузить ни одного клиента.")
+        await state.clear()
+        return
+
+    await call.message.edit_text('🤖 <b>Выберите аккаунт.</b> Выбранные аккаунты будут участвовать в рассылке', reply_markup=await active_users_multiple(state))
     await state.set_state(StatesState.select_users_state)
 
 
@@ -118,7 +130,17 @@ async def start_editing(call: types.CallbackQuery, state: FSMContext):
 
 @router.callback_query(F.data == 'broadcast_one')
 async def broadcast_1(call: types.CallbackQuery):
-    await call.message.edit_text(f'Выбери аккаунт:', reply_markup=await active_users_kb())
+    for user_id, client in session_manager.active_sessions.items():
+        try:
+            me: User = await client.get_me()
+            users.append(me.id)
+        except Exception as e:
+            logging.warning(f"Ошибка при получении {user_id}: {e}")
+
+    if not users:
+        await call.message.edit_text("❌ Не удалось загрузить ни одного клиента.")
+        return
+    await call.message.edit_text(f'🤖 <b>Выберите аккаунт.</b> Выбранные аккаунты будут участвовать в рассылке', reply_markup=await active_users_kb())
 
 
 @router.callback_query(F.data.startswith("broadcast_user_"))
@@ -153,19 +175,18 @@ async def check_text(message: types.Message, state: FSMContext):
     await message.delete()
 
     # Форматируем текст
-    formatted_text = markdown_decoration.unparse(message.text, message.entities)
+    formatted_text = html_decoration.unparse(message.text, message.entities)
 
-    # Сохраняем текст
     await state.update_data(message_text=formatted_text)
 
     data = await state.get_data()
     photo = data.get("photo")
 
     if photo:
-        await message.answer_photo(photo=photo, caption=formatted_text, parse_mode=ParseMode.MARKDOWN_V2,
+        await message.answer_photo(photo=photo, caption=formatted_text,
                                    reply_markup=broadcast_kb())
     else:
-        await message.answer(formatted_text, parse_mode=ParseMode.MARKDOWN_V2, reply_markup=broadcast_kb())
+        await message.answer(formatted_text, reply_markup=broadcast_kb())
 
     await state.set_state(StatesState.broadcasting_preview)
 
@@ -197,7 +218,7 @@ async def check_photo(message: types.Message, state: FSMContext, bot: Bot):
     data = await state.get_data()
     message_text = data.get("message_text", "")
 
-    await message.answer_photo(photo=photo, caption=message_text, parse_mode=ParseMode.MARKDOWN_V2,
+    await message.answer_photo(photo=photo, caption=message_text,
                                reply_markup=broadcast_kb())
 
     await state.set_state(StatesState.broadcasting_preview)
@@ -256,7 +277,7 @@ async def send(call: types.CallbackQuery, state: FSMContext, bot: Bot):
         broad_time = int(data.get('broad_time', 0))
         photo = None
         await call.message.delete()
-        await call.message.answer('Рассылка запущена!')
+        await call.message.answer('⌛️ Рассылка началась. Ожидайте результатов. Вы так же можете закончить рассылку досрочно')
         if call.message.photo:
             file = await bot.get_file(call.message.photo[-1].file_id)
             byte_stream = BytesIO()
@@ -266,7 +287,7 @@ async def send(call: types.CallbackQuery, state: FSMContext, bot: Bot):
             photo = byte_stream
         try:
             broad = await broadcast_one(client, message_text, broad_time, photo)
-            await call.message.answer(f'Рассылка завершена!\n\nУспешно: {broad[0]}\nНеудачно: {broad[1]}')
+            await call.message.answer(f'<b>🏁 РАССЫЛКА ЗАКОНЧЕНА!</b>\n<u>💭 Чаты:</u>\n<blockquote>✅ Успешно: <b>{broad[0]} чатов</b>\n🚫 Не удачно: <b>{broad[1]} чатов</b></blockquote>', reply_markup=main_menu_broadcast.as_markup())
         except Exception as e:
             await call.message.answer(f"❌ Ошибка: {str(e)}\n\n")
         await state.clear()
@@ -290,10 +311,8 @@ async def broadcast_all(call: types.CallbackQuery, state: FSMContext):
 
     await state.update_data(broadcast_clients=clients, broadcast_user_ids=users, multiply=True)
 
-    # Переход к следующему состоянию
     await state.set_state(StatesState.broadcasting_preview)
 
-    # Отправляем ОДНО сообщение
     await call.message.edit_text(
         f"☘️ Рассылка будет отправлена на {len(users)} аккаунт(ов).",
         reply_markup=broadcast_kb()

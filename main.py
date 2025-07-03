@@ -2,11 +2,18 @@ import asyncio
 import logging
 
 from aiogram import Bot, Dispatcher
+from aiogram.client.default import DefaultBotProperties
+
 from routers.register_routers import register_routers
 
 from utils.sessions.session_manager import session_manager
 
 from config import bot_token
+
+
+default = DefaultBotProperties(
+    parse_mode='html'
+)
 
 
 async def on_startup():
@@ -23,7 +30,7 @@ async def on_shutdown():
 
 
 async def main():
-    bot = Bot(token=bot_token)
+    bot = Bot(token=bot_token, default=default)
     dp = Dispatcher()
 
     logging.basicConfig(
