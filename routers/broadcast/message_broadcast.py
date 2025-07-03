@@ -20,6 +20,7 @@ router = Router()
 users = []
 text = ''
 
+
 class StatesState(StatesGroup):
     waiting_text = State()
     waiting_photo = State()
@@ -28,9 +29,11 @@ class StatesState(StatesGroup):
 
     select_users_state = State()
 
+
 @router.callback_query(F.data == 'broadcast')
 async def broadcast(call: types.CallbackQuery):
     await call.message.edit_text('Тип рассылки:', reply_markup=broadcast_mk.as_markup())
+
 
 @router.callback_query(F.data == 'broadcast_back')
 async def back(call: types.CallbackQuery, state: FSMContext):
@@ -42,10 +45,12 @@ async def back(call: types.CallbackQuery, state: FSMContext):
         await call.message.edit_text(f'Добро пожаловать {call.from_user.full_name}', reply_markup=start_kb.as_markup())
         await state.clear()
 
+
 @router.callback_query(F.data == 'broadcast_multiple')
 async def broadcast_multiple(call: types.CallbackQuery, state: FSMContext):
     await call.message.edit_text('Выбери аккаунты:', reply_markup=await active_users_multiple(state))
     await state.set_state(StatesState.select_users_state)
+
 
 @router.callback_query(F.data.startswith('broadcast-user-multiple'), StatesState.select_users_state)
 async def select_user(call: types.CallbackQuery, state: FSMContext):
@@ -68,22 +73,15 @@ async def select_user(call: types.CallbackQuery, state: FSMContext):
     await call.message.edit_reply_markup(reply_markup=new_markup)
     await call.answer("Обновлено ✅" if new_value else "Отключено ❌")
 
+
 @router.callback_query(F.data == 'broadcast_go')
 async def start_editing(call: types.CallbackQuery, state: FSMContext):
-    #button_states = {k: v for k, v in data.items() if k.startswith("btn_")}
-    #await call.message.delete()
-
-    #data = call.data.split('_')
-
     clients = []
 
     data = await state.get_data()
 
     # Получаем ID выбранных пользователей
     selected_ids = [int(k.split('_')[1]) for k, v in data.items() if k.startswith('btn_') and v is True]
-
-    print(selected_ids)
-    print(data)
 
     if not selected_ids:
         await call.answer("❌ Никто не выбран")
@@ -118,10 +116,10 @@ async def start_editing(call: types.CallbackQuery, state: FSMContext):
     )
 
 
-
 @router.callback_query(F.data == 'broadcast_one')
 async def broadcast_1(call: types.CallbackQuery):
     await call.message.edit_text(f'Выбери аккаунт:', reply_markup=await active_users_kb())
+
 
 @router.callback_query(F.data.startswith("broadcast_user_"))
 async def select_user(call: types.CallbackQuery, state: FSMContext):
@@ -139,6 +137,7 @@ async def select_user(call: types.CallbackQuery, state: FSMContext):
             await call.message.edit_text(f"❌ Ошибка: {str(e)}\n\n")
             await state.clear()
 
+
 # === Добавление текста ===
 @router.callback_query(F.data == 'broadcast_add_text', StatesState.broadcasting_preview)
 async def add_text(call: types.CallbackQuery, state: FSMContext):
@@ -147,6 +146,7 @@ async def add_text(call: types.CallbackQuery, state: FSMContext):
     else:
         await call.message.edit_text('📄 Отправьте текст для рассылки', reply_markup=None)
     await state.set_state(StatesState.waiting_text)
+
 
 @router.message(StatesState.waiting_text)
 async def check_text(message: types.Message, state: FSMContext):
@@ -162,11 +162,13 @@ async def check_text(message: types.Message, state: FSMContext):
     photo = data.get("photo")
 
     if photo:
-        await message.answer_photo(photo=photo, caption=formatted_text, parse_mode=ParseMode.MARKDOWN_V2, reply_markup=broadcast_kb())
+        await message.answer_photo(photo=photo, caption=formatted_text, parse_mode=ParseMode.MARKDOWN_V2,
+                                   reply_markup=broadcast_kb())
     else:
         await message.answer(formatted_text, parse_mode=ParseMode.MARKDOWN_V2, reply_markup=broadcast_kb())
 
     await state.set_state(StatesState.broadcasting_preview)
+
 
 # === Добавление фото ===
 @router.callback_query(F.data == 'broadcast_add_photo', StatesState.broadcasting_preview)
@@ -177,6 +179,7 @@ async def add_photo(call: types.CallbackQuery, state: FSMContext):
         await call.message.answer("🖼 Отправьте фото для рассылки")
 
     await state.set_state(StatesState.waiting_photo)
+
 
 @router.message(StatesState.waiting_photo, F.photo)
 async def check_photo(message: types.Message, state: FSMContext, bot: Bot):
@@ -194,16 +197,20 @@ async def check_photo(message: types.Message, state: FSMContext, bot: Bot):
     data = await state.get_data()
     message_text = data.get("message_text", "")
 
-    await message.answer_photo(photo=photo, caption=message_text, parse_mode=ParseMode.MARKDOWN_V2, reply_markup=broadcast_kb())
+    await message.answer_photo(photo=photo, caption=message_text, parse_mode=ParseMode.MARKDOWN_V2,
+                               reply_markup=broadcast_kb())
 
     await state.set_state(StatesState.broadcasting_preview)
+
 
 @router.callback_query(F.data == 'broadcast_time')
 async def broadcast_time(call: types.CallbackQuery, state: FSMContext):
     await call.message.answer('⏳ Выберите время', reply_markup=broadcast_time_kb())
     await state.set_state(StatesState.broadcast_time_state)
 
-@router.callback_query(lambda c: c.data and c.data.startswith('broadcast_time_'), StateFilter(StatesState.broadcast_time_state))
+
+@router.callback_query(lambda c: c.data and c.data.startswith('broadcast_time_'),
+                       StateFilter(StatesState.broadcast_time_state))
 async def select_time(call: types.CallbackQuery, state: FSMContext):
     data = call.data.split('_')[2]
 
@@ -219,6 +226,7 @@ async def select_time(call: types.CallbackQuery, state: FSMContext):
     await state.set_state(StatesState.broadcasting_preview)
     await call.message.delete()
 
+
 @router.callback_query(F.data == 'broadcast_run', StatesState.broadcasting_preview)
 async def send(call: types.CallbackQuery, state: FSMContext, bot: Bot):
     data = await state.get_data()
@@ -226,7 +234,7 @@ async def send(call: types.CallbackQuery, state: FSMContext, bot: Bot):
         message_text = data.get('message_text')
         clients = data.get('broadcast_clients')
         broad_time = int(data.get('broad_time', 0))
-        photo =  None
+        photo = None
         await call.message.delete()
         await call.message.answer('Рассылка запущена!')
         if call.message.photo:
@@ -246,7 +254,7 @@ async def send(call: types.CallbackQuery, state: FSMContext, bot: Bot):
         message_text = data.get('message_text')
         client = data.get('client')
         broad_time = int(data.get('broad_time', 0))
-        photo =  None
+        photo = None
         await call.message.delete()
         await call.message.answer('Рассылка запущена!')
         if call.message.photo:
@@ -262,3 +270,31 @@ async def send(call: types.CallbackQuery, state: FSMContext, bot: Bot):
         except Exception as e:
             await call.message.answer(f"❌ Ошибка: {str(e)}\n\n")
         await state.clear()
+
+
+@router.callback_query(F.data == 'broadcast_all')
+async def broadcast_all(call: types.CallbackQuery, state: FSMContext):
+    clients = []
+    for user_id, client in session_manager.active_sessions.items():
+        try:
+            me: User = await client.get_me()
+            users.append(me.id)
+            clients.append(client)
+        except Exception as e:
+            logging.warning(f"Ошибка при получении {user_id}: {e}")
+
+    if not users:
+        await call.message.edit_text("❌ Не удалось загрузить ни одного клиента.")
+        await state.clear()
+        return
+
+    await state.update_data(broadcast_clients=clients, broadcast_user_ids=users, multiply=True)
+
+    # Переход к следующему состоянию
+    await state.set_state(StatesState.broadcasting_preview)
+
+    # Отправляем ОДНО сообщение
+    await call.message.edit_text(
+        f"☘️ Рассылка будет отправлена на {len(users)} аккаунт(ов).",
+        reply_markup=broadcast_kb()
+    )
