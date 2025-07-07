@@ -6,7 +6,7 @@ from aiogram.enums import ParseMode
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import BufferedInputFile
-from aiogram.utils.text_decorations import markdown_decoration
+from aiogram.utils.text_decorations import markdown_decoration, html_decoration
 
 from utils.keyboards import on_off_kb, start_kb, autoresponder_kb, autoresponder_users
 
@@ -78,8 +78,7 @@ async def add_text(call: types.CallbackQuery, state: FSMContext):
 async def check_text(message: types.Message, state: FSMContext):
     await message.delete()
 
-    # Форматируем текст
-    formatted_text = markdown_decoration.unparse(message.text, message.entities)
+    formatted_text = html_decoration.unparse(message.text, message.entities)
 
     # Сохраняем текст
     await state.update_data(message_text=formatted_text)
@@ -88,10 +87,10 @@ async def check_text(message: types.Message, state: FSMContext):
     photo = data.get("photo")
 
     if photo:
-        await message.answer_photo(photo=photo, caption=formatted_text, parse_mode=ParseMode.MARKDOWN_V2,
+        await message.answer_photo(photo=photo, caption=formatted_text,
                                    reply_markup=autoresponder_kb())
     else:
-        await message.answer(formatted_text, parse_mode=ParseMode.MARKDOWN_V2, reply_markup=autoresponder_kb())
+        await message.answer(formatted_text, reply_markup=autoresponder_kb())
 
     await state.set_state(AutoresponderStates.autoresponder_preview)
 
@@ -133,7 +132,7 @@ async def check_photo(message: types.Message, state: FSMContext, bot: Bot):
     data = await state.get_data()
     message_text = data.get("message_text", "")
 
-    await message.answer_photo(photo=photo, caption=message_text, parse_mode=ParseMode.MARKDOWN_V2,
+    await message.answer_photo(photo=photo, caption=message_text,
                                reply_markup=autoresponder_kb())
 
     await state.set_state(AutoresponderStates.autoresponder_preview)
