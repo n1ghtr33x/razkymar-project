@@ -30,7 +30,7 @@ async def on_shutdown():
 
 
 async def main():
-    bot = Bot(token='7971769690:AAE_8kcIwPF7sXJ2quEDyrRCPNWk8P4LMC0', default=default)
+    bot = Bot(token=bot_token, default=default)
     dp = Dispatcher()
 
     logging.basicConfig(
