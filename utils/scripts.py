@@ -1,6 +1,5 @@
 import logging
 from io import BytesIO
-import re
 
 from pyrogram import Client
 from typing import Dict, Any, Optional
