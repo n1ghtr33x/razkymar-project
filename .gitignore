@@ -13,3 +13,8 @@ unknown_errors.txt
 db.db
 unknown_errors.txt
 photos
+/routers/autoresponder/__pycache__
+/routers/broadcast/__pycache__
+/routers/sessions/__pycache__
+utils/__pycache__/scripts.cpython-310.pyc
+sessions/sessions.json

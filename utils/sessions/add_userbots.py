@@ -28,7 +28,17 @@ async def start_pyrogram(session_name, session_string):
             try:
                 me = await app.get_me()
                 if message.from_user.id == me.id:
-                    if message.text == '!проверить':
+                    if message.text.lower() == '!проверить':
+                            us = db.get('core.users', 'old_users')
+                            if us:
+                                for i in us['users']:
+                                    if i == message.chat.id:
+                                        await message.edit_text(text='Пользователь существует')
+                                        return
+                            await message.edit_text('Пользователя не существует')
+
+                    elif message.text.lower() == '!обновить список':
+                        await message.edit_text('Обновление списка..')
                         users = []
                         try:
                             from .session_manager import session_manager
@@ -45,27 +55,18 @@ async def start_pyrogram(session_name, session_string):
                                             else:
                                                 users.append(dialog.chat.id)
                                                 user_mess.append(msg)
-
-                                        if dialog.chat.id == message.chat.id:
-                                            if len(user_mess) >= 10:
-                                                await message.edit_text(text='Пользователь существует')
-                                                return
                                 except Exception as e:
                                     logging.warning(f"Ошибка при получении {user_id}: {e}")
                             value = {
                                 'users': users
                             }
                             db.set('core.users', 'old_users', value)
-                            us = db.get('core.users', 'old_users')
-                            if us:
-                                for i in us['users']:
-                                    if i == message.chat.id:
-                                        await message.edit_text(text='Пользователь существует')
-                                        return
-                            await message.edit_text('Пользователя не существует')
+
+                            await message.edit_text('Список пользователей обновлен')
                         except MessageIdInvalid as ex:
                             logging.info(f'warning: {ex}')
                 else:
+                    print(message.text)
                     status = db.get('core.autoresponder', 'status', False)
                     if status:
                         users = db.get('core.autoresponder', 'users', [])
@@ -78,6 +79,19 @@ async def start_pyrogram(session_name, session_string):
                                                      parse_mode=ParseMode.HTML)
                             else:
                                 await app.send_message(chat_id=message.chat.id, text=text, parse_mode=ParseMode.HTML)
+                    users = db.get('core.users', 'old_users')
+                    if users:
+                        for i in users['users']:
+                            if i == message.from_user.id:
+                                return
+                    await app.send_message(chat_id=message.chat.id, text='🎁 НОВЫЙ КЛИЕНТ! Вы получили скидку 10% от нашего магазина.')
+                    if users:
+                        users['users'] += message.chat.id
+                    else:
+                        users = {
+                            'users': [message.chat.id]
+                        }
+                    db.set('core.users', 'old_users', users)
             except FloodWait:
                 pass
 
